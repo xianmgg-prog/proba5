@@ -106,6 +106,7 @@ class PurchaseOrder(Base):
     notes = Column(Text)
     approved_by = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    supplier = relationship("Supplier")
     items = relationship("PurchaseOrderItem", back_populates="order")
 
 class PurchaseOrderItem(Base):
@@ -151,6 +152,7 @@ class Invoice(Base):
     issue_date = Column(Date, default=datetime.utcnow)
     due_date = Column(Date)
     paid_date = Column(Date, nullable=True)
+    customer = relationship("Customer", back_populates="invoices")
     customer = relationship("Customer", back_populates="invoices")
     items = relationship("InvoiceItem", back_populates="invoice")
 
@@ -205,6 +207,7 @@ class BankTransaction(Base):
     balance = Column(Numeric(12,2))
     is_reconciled = Column(Boolean, default=False)
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=True)
+    invoice = relationship("Invoice")
     source = Column(String, default="mock")  # mock / api
 
 class Employee(Base):
