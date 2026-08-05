@@ -7,6 +7,27 @@ from sqlalchemy.orm import joinedload
 from datetime import date
 import pandas as pd
 
+@st.cache_data(ttl=30)
+def get_customers():
+    db = SessionLocal()
+    result = db.query(Customer).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_invoices():
+    db = SessionLocal()
+    result = db.query(Invoice).options(joinedload(Invoice.customer)).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_products():
+    db = SessionLocal()
+    result = db.query(Product).all()
+    db.close()
+    return result
+
 def show():
     st.header("💶 Ventas y Facturación")
     db = SessionLocal()
@@ -15,7 +36,7 @@ def show():
 
     with tab1:
         status_filter = st.selectbox("Estado", ["Todos"] + [s.value for s in InvoiceStatus])
-        invoices = db.query(Invoice).options(joinedload(Invoice.customer)).all()
+        invoices = get_invoices()
         if status_filter != "Todos":
             invoices = [i for i in invoices if i.status.value == status_filter]
 
@@ -34,14 +55,15 @@ def show():
 
     with tab2:
         st.subheader("Crear Factura")
+        customers = get_customers()
+        products = get_products()
         with st.form("invoice"):
-            customer = st.selectbox("Cliente", [f"{c.id} - {c.name}" for c in db.query(Customer).all()])
+            customer = st.selectbox("Cliente", [f"{c.id} - {c.name}" for c in customers])
             series = st.text_input("Serie", value="F2026")
             num = st.number_input("Número", min_value=1, value=4)
             due_days = st.number_input("Vencimiento (días)", min_value=1, value=30)
 
             st.write("Líneas de factura")
-            products = db.query(Product).all()
             lines = []
             for idx in range(3):
                 cols = st.columns([3,1,1,1])
@@ -70,11 +92,13 @@ def show():
                 inv.total = subtotal * 1.21
                 db.commit()
                 st.success(f"Factura {series}-{num:04d} creada")
+                st.cache_data.clear()
                 st.rerun()
 
     with tab3:
         st.subheader("🛒 Punto de Venta Rápido")
-        prod_quick = st.selectbox("Producto", [f"{p.id} - {p.name} ({format_currency(p.price_sale)})" for p in db.query(Product).all()])
+        products = get_products()
+        prod_quick = st.selectbox("Producto", [f"{p.id} - {p.name} ({format_currency(p.price_sale)})" for p in products])
         qty_quick = st.number_input("Cantidad", min_value=1, value=1)
 
         if st.button("Registrar Venta"):
@@ -86,6 +110,7 @@ def show():
                 db.add(StockMovement(product_id=pid, warehouse_id=1, type=StockMovementType.exit, quantity=qty_quick, notes="Venta POS", created_by=st.session_state.user["username"]))
                 db.commit()
                 st.success(f"Venta registrada: {p.name} x{qty_quick} = {format_currency(float(p.price_sale)*qty_quick)}")
+                st.cache_data.clear()
             else:
                 st.error("Stock insuficiente en almacén central")
 

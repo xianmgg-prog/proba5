@@ -7,60 +7,62 @@ from database import SessionLocal
 from models import Product, Stock, Invoice, InvoiceStatus, PurchaseOrder, BankTransaction, Campaign, CostAlert
 from utils.helpers import format_currency
 
-def kpi_cards():
+@st.cache_data(ttl=60)
+def get_kpi_data():
     db = SessionLocal()
-
-    col1, col2, col3, col4 = st.columns(4)
-
     total_stock = db.query(func.sum(Stock.quantity)).scalar() or 0
-    with col1:
-        st.metric("📦 Stock Total", f"{int(total_stock):,} uds")
-
     total_sales = db.query(func.sum(Invoice.total)).filter(Invoice.status == InvoiceStatus.paid).scalar() or 0
-    with col2:
-        st.metric("💰 Ventas Pagadas", format_currency(total_sales))
-
     pending = db.query(func.sum(Invoice.total)).filter(Invoice.status == InvoiceStatus.sent).scalar() or 0
-    with col3:
-        st.metric("⏳ Facturas Pendientes", format_currency(pending))
-
     last_tx = db.query(BankTransaction).order_by(BankTransaction.date.desc()).first()
     balance = last_tx.balance if last_tx else 0
+    db.close()
+    return total_stock, total_sales, pending, balance
+
+def kpi_cards():
+    total_stock, total_sales, pending, balance = get_kpi_data()
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("📦 Stock Total", f"{int(total_stock):,} uds")
+    with col2:
+        st.metric("💰 Ventas Pagadas", format_currency(total_sales))
+    with col3:
+        st.metric("⏳ Facturas Pendientes", format_currency(pending))
     with col4:
         st.metric("🏦 Balance Banco", format_currency(balance))
 
-    db.close()
-
-def sales_chart():
+@st.cache_data(ttl=60)
+def get_sales_data():
     db = SessionLocal()
     invoices = db.query(Invoice).filter(Invoice.status == InvoiceStatus.paid).all()
     db.close()
+    return [{"Fecha": i.issue_date, "Importe": float(i.total)} for i in invoices]
 
-    if not invoices:
+def sales_chart():
+    data = get_sales_data()
+    if not data:
         st.info("Sin datos de ventas")
         return
-
     import pandas as pd
-    df = pd.DataFrame([{"Fecha": i.issue_date, "Importe": float(i.total)} for i in invoices])
+    df = pd.DataFrame(data)
     df = df.groupby("Fecha").sum().reset_index()
-
     fig = px.bar(df, x="Fecha", y="Importe", title="Ventas por Fecha", color_discrete_sequence=["#1f77b4"])
     fig.update_layout(height=300)
     st.plotly_chart(fig, use_container_width=True)
 
-def stock_alert_chart():
+@st.cache_data(ttl=60)
+def get_stock_alert_data():
     db = SessionLocal()
-    # Usar joinedload para cargar stocks junto con productos
-    products = db.query(Product).options(joinedload(Product.stocks).joinedload(Stock.warehouse)).all()
-
+    products = db.query(Product).options(joinedload(Product.stocks)).all()
+    db.close()
     data = []
     for p in products:
         total = sum(s.quantity for s in p.stocks)
         if total <= p.min_stock:
             data.append({"Producto": p.name, "Stock": total, "Mínimo": int(p.min_stock)})
+    return data
 
-    db.close()
-
+def stock_alert_chart():
+    data = get_stock_alert_data()
     if data:
         import pandas as pd
         df = pd.DataFrame(data)
@@ -70,22 +72,24 @@ def stock_alert_chart():
     else:
         st.success("✅ No hay alertas de stock")
 
-def campaign_chart():
+@st.cache_data(ttl=60)
+def get_campaign_data():
     db = SessionLocal()
     camps = db.query(Campaign).all()
     db.close()
+    return [{"Campaña": c.name, "Presupuesto": float(c.budget), "Gastado": float(c.spent), "ROAS": float(c.roas)} for c in camps]
 
+def campaign_chart():
+    data = get_campaign_data()
     import pandas as pd
-    df = pd.DataFrame([{"Campaña": c.name, "Presupuesto": float(c.budget), "Gastado": float(c.spent), "ROAS": float(c.roas)} for c in camps])
+    df = pd.DataFrame(data)
 
     col1, col2 = st.columns(2)
     with col1:
         fig = px.pie(df, names="Campaña", values="Gastado", title="Distribución Gasto Publicidad")
-        fig.update_layout(height=300)
         st.plotly_chart(fig, use_container_width=True)
     with col2:
         fig = px.bar(df, x="Campaña", y="ROAS", title="ROAS por Campaña", color="ROAS", color_continuous_scale="RdYlGn")
-        fig.update_layout(height=300)
         st.plotly_chart(fig, use_container_width=True)
 
 def cashflow_forecast():

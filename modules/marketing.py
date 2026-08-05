@@ -5,13 +5,19 @@ from utils.helpers import format_currency
 import pandas as pd
 import plotly.express as px
 
+@st.cache_data(ttl=30)
+def get_campaigns():
+    db = SessionLocal()
+    result = db.query(Campaign).all()
+    db.close()
+    return result
+
 def show():
     st.header("📢 Marketing y Publicidad")
-    db = SessionLocal()
 
     st.info("🧪 Modo Mock — Datos simulados. Para producción configura APIs reales.")
 
-    campaigns = db.query(Campaign).all()
+    campaigns = get_campaigns()
 
     col1, col2, col3 = st.columns(3)
     total_budget = sum(c.budget for c in campaigns)
@@ -54,5 +60,3 @@ def show():
         if st.button("Generar copy"):
             st.success(f"Headline: ¡{product} ahora con 20% de descuento!  Body: Descubre por qué {audience} eligen {product}. Envío gratis 24h.  CTA: Comprar ahora →")
             st.caption("(En producción: conectar con OpenAI/Claude API)")
-
-    db.close()

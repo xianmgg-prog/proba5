@@ -6,6 +6,30 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 import pandas as pd
 
+@st.cache_data(ttl=30)
+def get_warehouses():
+    db = SessionLocal()
+    result = db.query(Warehouse).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_products_with_stock(search=""):
+    db = SessionLocal()
+    query = db.query(Product).options(joinedload(Product.stocks).joinedload(Stock.warehouse))
+    if search:
+        query = query.filter(Product.name.contains(search) | Product.sku.contains(search))
+    result = query.all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_stock_movements():
+    db = SessionLocal()
+    moves = db.query(StockMovement).options(joinedload(StockMovement.product), joinedload(StockMovement.warehouse)).order_by(StockMovement.created_at.desc()).limit(50).all()
+    db.close()
+    return moves
+
 def show():
     st.header("📦 Inventario y Stock en Tiempo Real")
     db = SessionLocal()
@@ -13,13 +37,11 @@ def show():
     tab1, tab2, tab3 = st.tabs(["Stock Actual", "Movimientos", "Alertas"])
 
     with tab1:
-        wh_filter = st.selectbox("Almacén", ["Todos"] + [w.name for w in db.query(Warehouse).all()])
-        search = st.text_input("Buscar producto...")
+        warehouses = get_warehouses()
+        wh_filter = st.selectbox("Almacén", ["Todos"] + [w.name for w in warehouses])
+        search = st.text_input("Buscar producto...", key="inv_search")
 
-        query = db.query(Product).options(joinedload(Product.stocks).joinedload(Stock.warehouse))
-        if search:
-            query = query.filter(Product.name.contains(search) | Product.sku.contains(search))
-        products = query.all()
+        products = get_products_with_stock(search)
 
         data = []
         for p in products:
@@ -46,8 +68,10 @@ def show():
         st.subheader("Nuevo Movimiento")
         with st.form("movement"):
             col1, col2, col3 = st.columns(3)
-            prod = col1.selectbox("Producto", [f"{p.id} - {p.name}" for p in db.query(Product).all()])
-            wh = col2.selectbox("Almacén", [f"{w.id} - {w.name}" for w in db.query(Warehouse).all()])
+            all_products = db.query(Product).all()
+            all_warehouses = db.query(Warehouse).all()
+            prod = col1.selectbox("Producto", [f"{p.id} - {p.name}" for p in all_products])
+            wh = col2.selectbox("Almacén", [f"{w.id} - {w.name}" for w in all_warehouses])
             mtype = col3.selectbox("Tipo", [t.value for t in StockMovementType])
             qty = st.number_input("Cantidad", min_value=1, value=1)
             notes = st.text_area("Notas")
@@ -70,10 +94,11 @@ def show():
                     db.add(StockMovement(product_id=pid, warehouse_id=wid, type=mtype, quantity=qty, notes=notes, created_by=st.session_state.user["username"]))
                     db.commit()
                     st.success("Movimiento registrado")
+                    st.cache_data.clear()
                     st.rerun()
 
         st.subheader("Historial")
-        moves = db.query(StockMovement).options(joinedload(StockMovement.product), joinedload(StockMovement.warehouse)).order_by(StockMovement.created_at.desc()).limit(50).all()
+        moves = get_stock_movements()
         if moves:
             df = pd.DataFrame([{
                 "Fecha": m.created_at,
@@ -88,9 +113,9 @@ def show():
 
     with tab3:
         st.subheader("⚠️ Productos con Stock Bajo")
-        products_all = db.query(Product).options(joinedload(Product.stocks)).all()
+        products = get_products_with_stock()
         low = []
-        for p in products_all:
+        for p in products:
             total = sum(s.quantity for s in p.stocks)
             if total <= p.min_stock:
                 low.append({"Producto": p.name, "SKU": p.sku, "Stock Actual": total, "Mínimo": p.min_stock, "Sugerencia": f"Reponer {p.max_stock - total} uds"})

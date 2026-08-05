@@ -4,13 +4,19 @@ from models import CostAlert
 from utils.helpers import format_currency
 import pandas as pd
 
+@st.cache_data(ttl=30)
+def get_alerts():
+    db = SessionLocal()
+    result = db.query(CostAlert).order_by(CostAlert.created_at.desc()).all()
+    db.close()
+    return result
+
 def show():
     st.header("🤖 Agentes Inteligentes de Optimización")
 
     st.info("🧠 Human-in-the-Loop — El agente detecta y propone. Tú decides.")
 
-    db = SessionLocal()
-    alerts = db.query(CostAlert).order_by(CostAlert.created_at.desc()).all()
+    alerts = get_alerts()
 
     tab1, tab2 = st.tabs(["Alertas Activas", "Configuración"])
 
@@ -33,20 +39,31 @@ def show():
                     with col3:
                         if alert.status == "pendiente":
                             if st.button("✅ Aprobar", key=f"app_{alert.id}"):
-                                alert.status = "aprobada"
-                                alert.approved_by = st.session_state.user["username"]
+                                db = SessionLocal()
+                                a = db.query(CostAlert).get(alert.id)
+                                a.status = "aprobada"
+                                a.approved_by = st.session_state.user["username"]
                                 db.commit()
+                                db.close()
                                 st.success("Aprobado")
+                                st.cache_data.clear()
                                 st.rerun()
                             if st.button("❌ Rechazar", key=f"rej_{alert.id}"):
-                                alert.status = "rechazada"
+                                db = SessionLocal()
+                                a = db.query(CostAlert).get(alert.id)
+                                a.status = "rechazada"
                                 db.commit()
+                                db.close()
                                 st.rerun()
                         elif alert.status == "aprobada":
                             if st.button("⚡ Ejecutar", key=f"exe_{alert.id}"):
-                                alert.status = "ejecutada"
+                                db = SessionLocal()
+                                a = db.query(CostAlert).get(alert.id)
+                                a.status = "ejecutada"
                                 db.commit()
+                                db.close()
                                 st.success("Cambio ejecutado (simulado)")
+                                st.cache_data.clear()
                                 st.rerun()
 
     with tab2:
@@ -59,5 +76,3 @@ def show():
             if st.form_submit_button("Guardar Configuración"):
                 st.success("Configuración guardada (simulado)")
                 st.caption("En producción: el agente compararía vía APIs de comparadores o scraping autorizado")
-
-    db.close()

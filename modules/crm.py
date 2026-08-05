@@ -5,15 +5,21 @@ from utils.helpers import format_currency
 from sqlalchemy.orm import joinedload
 import pandas as pd
 
+@st.cache_data(ttl=30)
+def get_customers():
+    db = SessionLocal()
+    result = db.query(Customer).options(joinedload(Customer.invoices)).all()
+    db.close()
+    return result
+
 def show():
     st.header("🤝 CRM - Clientes y Leads")
-    db = SessionLocal()
 
     tab1, tab2 = st.tabs(["Clientes", "Pipeline"])
 
     with tab1:
         type_filter = st.selectbox("Tipo", ["Todos", "cliente", "lead"])
-        customers = db.query(Customer).options(joinedload(Customer.invoices)).all()
+        customers = get_customers()
         if type_filter != "Todos":
             customers = [c for c in customers if c.type == type_filter]
 
@@ -30,9 +36,12 @@ def show():
                 ctype = st.selectbox("Tipo", ["cliente", "lead"])
                 segment = st.selectbox("Segmento", ["PYME", "Startup", "Retail", "Servicios", "General"])
                 if st.form_submit_button("Guardar"):
+                    db = SessionLocal()
                     db.add(Customer(name=name, email=email, phone=phone, tax_id=tax_id, type=ctype, segment=segment))
                     db.commit()
+                    db.close()
                     st.success("Cliente añadido")
+                    st.cache_data.clear()
                     st.rerun()
 
     with tab2:
@@ -50,5 +59,3 @@ def show():
                     st.caption("• Empresa Alpha (ampliación licencias)")
                 else:
                     st.caption("• Ninguno en cierre esta semana")
-
-    db.close()

@@ -7,6 +7,27 @@ from sqlalchemy.orm import joinedload
 import pandas as pd
 from datetime import date
 
+@st.cache_data(ttl=30)
+def get_accounts():
+    db = SessionLocal()
+    result = db.query(Account).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_journal_entries():
+    db = SessionLocal()
+    result = db.query(JournalEntry).order_by(JournalEntry.date.desc()).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_bank_transactions():
+    db = SessionLocal()
+    result = db.query(BankTransaction).options(joinedload(BankTransaction.invoice)).order_by(BankTransaction.date.desc()).all()
+    db.close()
+    return result
+
 def show():
     st.header("💼 Finanzas y Contabilidad")
     db = SessionLocal()
@@ -14,12 +35,12 @@ def show():
     tab1, tab2, tab3, tab4 = st.tabs(["Cuentas", "Libro Diario", "Banco / Sandbox", "Balance"])
 
     with tab1:
-        accounts = db.query(Account).all()
+        accounts = get_accounts()
         data = [{"Código": a.code, "Nombre": a.name, "Tipo": a.type.value, "Saldo": format_currency(a.balance)} for a in accounts]
         st.dataframe(pd.DataFrame(data), use_container_width=True)
 
     with tab2:
-        entries = db.query(JournalEntry).order_by(JournalEntry.date.desc()).all()
+        entries = get_journal_entries()
         data = []
         for e in entries:
             data.append({
@@ -35,7 +56,7 @@ def show():
         st.info("🏦 **Modo Sandbox** — Conectado a datos simulados de BBVA Sandbox")
         st.markdown("Para conectar con banco real, configura las credenciales en `.env` (ver docs/sandbox_banking.md)")
 
-        txs = db.query(BankTransaction).options(joinedload(BankTransaction.invoice)).order_by(BankTransaction.date.desc()).all()
+        txs = get_bank_transactions()
         data = []
         for t in txs:
             data.append({
@@ -63,6 +84,7 @@ def show():
                     inv.paid_date = date.today()
             db.commit()
             st.success("Conciliación simulada completada")
+            st.cache_data.clear()
             st.rerun()
 
     with tab4:

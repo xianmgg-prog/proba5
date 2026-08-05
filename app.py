@@ -6,9 +6,14 @@ from seed_data import seed
 from utils.auth import login_form, logout, show_user_info, require_login
 from utils.dashboard import kpi_cards, sales_chart, stock_alert_chart, campaign_chart, cashflow_forecast
 
-# Inicializar DB y seed (idempotente)
-init_db()
-seed()
+@st.cache_resource
+def setup_database():
+    """Solo se ejecuta una vez por sesión de usuario"""
+    init_db()
+    seed()
+    return True
+
+setup_database()
 
 # Navegación
 if "user" not in st.session_state:
@@ -33,23 +38,20 @@ page = st.sidebar.radio("", [
     "🏦 Banca (Sandbox)",
     "🤖 Agentes",
     "👥 RRHH",
-])
+], key="nav")
 
 if page == "🏠 Dashboard":
     st.title("🏠 Dashboard Principal")
     kpi_cards()
-
     col1, col2 = st.columns(2)
     with col1:
         sales_chart()
     with col2:
         stock_alert_chart()
-
     campaign_chart()
     cashflow_forecast()
-
     st.divider()
-    st.caption("ERP MVP v0.1 | Datos de demostración | Listo para GitHub + Render")
+    st.caption("ERP MVP v0.1 | Datos de demostración | Render")
 
 elif page == "📦 Inventario":
     from modules import inventario

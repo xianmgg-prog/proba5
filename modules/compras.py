@@ -5,6 +5,27 @@ from utils.helpers import format_currency, status_badge
 from sqlalchemy.orm import joinedload
 import pandas as pd
 
+@st.cache_data(ttl=30)
+def get_suppliers():
+    db = SessionLocal()
+    result = db.query(Supplier).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_purchase_orders():
+    db = SessionLocal()
+    result = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.supplier)).all()
+    db.close()
+    return result
+
+@st.cache_data(ttl=30)
+def get_products():
+    db = SessionLocal()
+    result = db.query(Product).all()
+    db.close()
+    return result
+
 def show():
     st.header("📋 Compras y Proveedores")
     db = SessionLocal()
@@ -12,13 +33,13 @@ def show():
     tab1, tab2, tab3 = st.tabs(["Proveedores", "Órdenes de Compra", "Nueva OC"])
 
     with tab1:
-        suppliers = db.query(Supplier).all()
+        suppliers = get_suppliers()
         data = [{"Nombre": s.name, "Contacto": s.contact, "Email": s.email, "Teléfono": s.phone, 
                  "Rating": "⭐" * int(s.rating), "Aprobado": "✅" if s.is_approved else "❌", "Plazo": s.payment_terms} for s in suppliers]
         st.dataframe(pd.DataFrame(data), use_container_width=True)
 
     with tab2:
-        orders = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.supplier)).all()
+        orders = get_purchase_orders()
         data = []
         for o in orders:
             data.append({
@@ -32,12 +53,13 @@ def show():
         st.dataframe(pd.DataFrame(data), use_container_width=True)
 
     with tab3:
+        suppliers = get_suppliers()
+        products = get_products()
         with st.form("new_po"):
-            supplier = st.selectbox("Proveedor", [f"{s.id} - {s.name}" for s in db.query(Supplier).all()])
+            supplier = st.selectbox("Proveedor", [f"{s.id} - {s.name}" for s in suppliers])
             notes = st.text_area("Notas")
 
             lines = []
-            products = db.query(Product).all()
             for idx in range(3):
                 cols = st.columns([3,1,1])
                 prod_sel = cols[0].selectbox(f"Producto {idx+1}", [""] + [f"{p.id} - {p.name}" for p in products], key=f"po_prod_{idx}")
@@ -57,6 +79,7 @@ def show():
                     db.add(PurchaseOrderItem(order_id=po.id, **line))
                 db.commit()
                 st.success(f"Orden de compra #{po.id} creada")
+                st.cache_data.clear()
                 st.rerun()
 
     db.close()
