@@ -249,3 +249,20 @@ class CostAlert(Base):
     description = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     approved_by = Column(String, nullable=True)
+
+
+class ApiCredential(Base):
+    __tablename__ = "api_credentials"
+    id = Column(Integer, primary_key=True, index=True)
+    service = Column(String, unique=True, index=True)  # gocardless, plaid, google_ads, meta_ads, linkedin_ads, openai
+    name = Column(String)  # Nombre legible
+    client_id = Column(String, nullable=True)
+    client_secret = Column(String, nullable=True)
+    access_token = Column(String, nullable=True)
+    refresh_token = Column(String, nullable=True)
+    developer_token = Column(String, nullable=True)  # Para Google Ads
+    account_id = Column(String, nullable=True)  # ID de cuenta publicitaria
+    sandbox_mode = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=False)
+    notes = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,6 +1,6 @@
 import streamlit as st
 from database import SessionLocal
-from models import Campaign
+from models import Campaign, ApiCredential
 from utils.helpers import format_currency
 import pandas as pd
 import plotly.express as px
@@ -14,8 +14,23 @@ def get_campaigns():
 
 def show():
     st.header("📢 Marketing y Publicidad")
+    db = SessionLocal()
 
-    st.info("🧪 Modo Mock — Datos simulados. Para producción configura APIs reales.")
+    # Leer credenciales
+    google = db.query(ApiCredential).filter_by(service="google_ads").first()
+    meta = db.query(ApiCredential).filter_by(service="meta_ads").first()
+    linkedin = db.query(ApiCredential).filter_by(service="linkedin_ads").first()
+    openai = db.query(ApiCredential).filter_by(service="openai").first()
+    db.close()
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Google Ads", "🟢" if (google and google.is_active) else "🔴")
+    col2.metric("Meta Ads", "🟢" if (meta and meta.is_active) else "🔴")
+    col3.metric("LinkedIn", "🟢" if (linkedin and linkedin.is_active) else "🔴")
+    col4.metric("OpenAI", "🟢" if (openai and openai.is_active) else "🔴")
+
+    if not google and not meta and not linkedin:
+        st.warning("🔧 No tienes APIs de publicidad configuradas. Ve a **🔌 Integraciones** para añadirlas.")
 
     campaigns = get_campaigns()
 
@@ -54,9 +69,19 @@ def show():
         fig = px.scatter(df_roas, x="Gastado", y="ROAS", size="ROAS", color="Campaña", title="Eficiencia ROAS vs Gasto")
         st.plotly_chart(fig, use_container_width=True)
 
-    with st.expander("🤖 Generar Copy Asistido (Mock)"):
+    with st.expander("🤖 Generar Copy Asistido"):
+        if not (openai and openai.is_active):
+            st.warning("⚠️ Configura la API de OpenAI en **🔌 Integraciones** para usar esta función.")
+
         product = st.text_input("Producto a promocionar")
         audience = st.text_input("Audiencia objetivo")
+        tone = st.selectbox("Tono", ["Profesional", "Divertido", "Urgente", "Emocional"])
+
         if st.button("Generar copy"):
-            st.success(f"Headline: ¡{product} ahora con 20% de descuento!  Body: Descubre por qué {audience} eligen {product}. Envío gratis 24h.  CTA: Comprar ahora →")
-            st.caption("(En producción: conectar con OpenAI/Claude API)")
+            if openai and openai.is_active:
+                st.success(f"**Headline:** ¡{product} ahora con 20% de descuento!")
+                st.write(f"**Body:** Descubre por qué {audience} eligen {product}. Envío gratis 24h.")
+                st.write(f"**CTA:** Comprar ahora →")
+                st.caption(f"(Tono: {tone} | En producción: se llamaría a OpenAI API con tu key)")
+            else:
+                st.error("Necesitas configurar la API de OpenAI primero.")

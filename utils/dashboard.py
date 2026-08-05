@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from database import SessionLocal
 from models import Product, Stock, Invoice, InvoiceStatus, PurchaseOrder, BankTransaction, Campaign, CostAlert
+from utils.theme import kpi_card
 from utils.helpers import format_currency
 
 @st.cache_data(ttl=60)
@@ -22,13 +23,13 @@ def kpi_cards():
     total_stock, total_sales, pending, balance = get_kpi_data()
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("📦 Stock Total", f"{int(total_stock):,} uds")
+        kpi_card("Stock Total", f"{int(total_stock):,} uds", "📦", color="#3b82f6")
     with col2:
-        st.metric("💰 Ventas Pagadas", format_currency(total_sales))
+        kpi_card("Ventas Pagadas", format_currency(total_sales), "💰", color="#10b981")
     with col3:
-        st.metric("⏳ Facturas Pendientes", format_currency(pending))
+        kpi_card("Facturas Pendientes", format_currency(pending), "⏳", color="#f59e0b")
     with col4:
-        st.metric("🏦 Balance Banco", format_currency(balance))
+        kpi_card("Balance Banco", format_currency(balance), "🏦", color="#8b5cf6")
 
 @st.cache_data(ttl=60)
 def get_sales_data():
@@ -45,8 +46,11 @@ def sales_chart():
     import pandas as pd
     df = pd.DataFrame(data)
     df = df.groupby("Fecha").sum().reset_index()
-    fig = px.bar(df, x="Fecha", y="Importe", title="Ventas por Fecha", color_discrete_sequence=["#1f77b4"])
-    fig.update_layout(height=300)
+
+    fig = px.bar(df, x="Fecha", y="Importe", title="📈 Ventas por Fecha", 
+                 color_discrete_sequence=["#1e3a5f"], template="plotly_white")
+    fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
 @st.cache_data(ttl=60)
@@ -66,8 +70,11 @@ def stock_alert_chart():
     if data:
         import pandas as pd
         df = pd.DataFrame(data)
-        fig = px.bar(df, x="Producto", y=["Stock", "Mínimo"], barmode="group", title="⚠️ Alertas de Stock Bajo")
-        fig.update_layout(height=300)
+        fig = px.bar(df, x="Producto", y=["Stock", "Mínimo"], barmode="group", 
+                     title="⚠️ Alertas de Stock Bajo", template="plotly_white",
+                     color_discrete_sequence=["#ef4444", "#cbd5e1"])
+        fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.success("✅ No hay alertas de stock")
@@ -86,14 +93,20 @@ def campaign_chart():
 
     col1, col2 = st.columns(2)
     with col1:
-        fig = px.pie(df, names="Campaña", values="Gastado", title="Distribución Gasto Publicidad")
+        fig = px.pie(df, names="Campaña", values="Gastado", title="💸 Distribución Gasto Publicidad",
+                     template="plotly_white", hole=0.4)
+        fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        fig = px.bar(df, x="Campaña", y="ROAS", title="ROAS por Campaña", color="ROAS", color_continuous_scale="RdYlGn")
+        fig = px.bar(df, x="Campaña", y="ROAS", title="🎯 ROAS por Campaña", 
+                     color="ROAS", color_continuous_scale="RdYlGn", template="plotly_white")
+        fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig, use_container_width=True)
 
 def cashflow_forecast():
-    st.subheader("📈 Previsión de Tesorería (30 días)")
+    st.markdown("<h3 style='color:#1e3a5f;font-size:1.1rem;font-weight:700;margin:1.5rem 0 1rem 0;'>📊 Previsión de Tesorería (30 días)</h3>", unsafe_allow_html=True)
     import pandas as pd
     from datetime import datetime, timedelta
 
@@ -102,7 +115,9 @@ def cashflow_forecast():
     values = [base + (i * 150) - (500 if i % 7 == 0 else 0) for i in range(30)]
 
     df = pd.DataFrame({"Fecha": dates, "Saldo Previsto": values})
-    fig = px.line(df, x="Fecha", y="Saldo Previsto", title="Flujo de Caja Proyectado")
-    fig.add_hline(y=20000, line_dash="dash", line_color="red", annotation_text="Límite mínimo")
-    fig.update_layout(height=300)
+    fig = px.line(df, x="Fecha", y="Saldo Previsto", title="", template="plotly_white")
+    fig.add_hline(y=20000, line_dash="dash", line_color="#ef4444", annotation_text="Límite mínimo")
+    fig.update_traces(line_color="#1e3a5f", line_width=3)
+    fig.update_layout(height=280, margin=dict(l=20, r=20, t=20, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
