@@ -24,7 +24,7 @@ def setup_database():
 setup_database()
 
 # ============================================================
-# ESTILOS GLOBALES PROFESIONALES
+# ESTILOS GLOBALES PROFESIONALES + TABLAS
 # ============================================================
 st.markdown("""
 <style>
@@ -34,26 +34,22 @@ html, body, [class*="css"] {
     font-family: 'Inter', sans-serif !important;
 }
 
-/* Ocultar elementos por defecto de Streamlit que rompen el diseño */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 .stDeployButton {display: none !important;}
 
-/* Scrollbar elegante */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* Inputs profesionales */
+/* Inputs */
 .stTextInput > div > div > input,
 .stTextInput > div > div > input:focus {
     border-radius: 10px !important;
     border: 1.5px solid #e2e8f0 !important;
     padding: 10px 14px !important;
     font-size: 0.9rem !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
 }
 .stTextInput > div > div > input:focus {
     border-color: #6366f1 !important;
@@ -67,7 +63,6 @@ header {visibility: hidden;}
     border-radius: 10px !important;
     padding: 10px 18px !important;
     font-weight: 700 !important;
-    font-size: 0.9rem !important;
     box-shadow: 0 4px 14px rgba(99,102,241,0.35) !important;
     transition: transform 0.15s, box-shadow 0.15s !important;
 }
@@ -82,7 +77,6 @@ header {visibility: hidden;}
     color: #475569 !important;
     border: 1.5px solid #e2e8f0 !important;
     border-radius: 10px !important;
-    padding: 10px 16px !important;
     font-weight: 600 !important;
     font-size: 0.85rem !important;
     transition: all 0.15s !important;
@@ -92,7 +86,7 @@ header {visibility: hidden;}
     border-color: #cbd5e1 !important;
 }
 
-/* Sidebar profesional */
+/* Sidebar */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important;
     box-shadow: 4px 0 24px rgba(0,0,0,0.15) !important;
@@ -114,9 +108,8 @@ header {visibility: hidden;}
     color: #94a3b8 !important;
     font-size: 0.85rem !important;
     font-weight: 500 !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
     border-left: 3px solid transparent !important;
+    transition: all 0.2s ease !important;
 }
 [data-testid="stSidebar"] .stRadio label:hover {
     background: rgba(255,255,255,0.06) !important;
@@ -132,13 +125,102 @@ header {visibility: hidden;}
     background: linear-gradient(90deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.05) 100%) !important;
     color: #818cf8 !important;
     border-left: 3px solid #6366f1 !important;
-    font-weight: 600 !important;
 }
 
 /* Main content */
 .block-container {
     padding: 28px 32px !important;
     max-width: none !important;
+}
+
+/* ============================================================
+   TABLAS PROFESIONALES - CSS GLOBAL
+   Afecta a TODAS las st.dataframe() y st.table() automáticamente
+   ============================================================ */
+
+[data-testid="stDataFrameResizable"],
+[data-testid="stDataFrameContainer"] {
+    background: white !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02) !important;
+    border: 1px solid #f1f5f9 !important;
+    overflow: hidden !important;
+    margin-bottom: 18px !important;
+}
+
+[data-testid="stDataFrameResizable"] [data-testid="stTable"] th,
+[data-testid="stDataFrameContainer"] th,
+[data-testid="stTable"] th {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    font-weight: 700 !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    padding: 12px 14px !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    border-right: none !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+[data-testid="stDataFrameResizable"] [data-testid="stTable"] td,
+[data-testid="stDataFrameContainer"] td,
+[data-testid="stTable"] td {
+    color: #334155 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 12px 14px !important;
+    font-size: 0.82rem !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+[data-testid="stDataFrameResizable"] [data-testid="stTable"] tbody tr:hover td,
+[data-testid="stDataFrameContainer"] tbody tr:hover td,
+[data-testid="stTable"] tbody tr:hover td {
+    background: #f8fafc !important;
+    transition: background 0.15s ease !important;
+}
+
+[data-testid="stDataFrameResizable"] [data-testid="stTable"] thead tr:first-child th:first-child,
+[data-testid="stTable"] thead tr:first-child th:first-child {
+    border-top-left-radius: 16px !important;
+}
+[data-testid="stDataFrameResizable"] [data-testid="stTable"] thead tr:first-child th:last-child,
+[data-testid="stTable"] thead tr:first-child th:last-child {
+    border-top-right-radius: 16px !important;
+}
+
+[data-testid="stDataFrameResizable"] [data-testid="stTable"],
+[data-testid="stTable"] {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: none !important;
+}
+
+.stTable {
+    background: white !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02) !important;
+    border: 1px solid #f1f5f9 !important;
+    overflow: hidden !important;
+}
+.stTable th {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    font-weight: 700 !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    padding: 12px 14px !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+}
+.stTable td {
+    color: #334155 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 12px 14px !important;
+    font-size: 0.82rem !important;
+}
+.stTable tbody tr:hover td {
+    background: #f8fafc !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -155,12 +237,11 @@ if "user" not in st.session_state:
     }
     </style>
     """, unsafe_allow_html=True)
-    
+
     col1, col2, col3 = st.columns([1, 1.1, 1])
     with col2:
         st.markdown("<div style='height:12vh'></div>", unsafe_allow_html=True)
-        
-        # Tarjeta de login flotante
+
         st.markdown("""
         <div style="
             background: white;
@@ -187,14 +268,14 @@ if "user" not in st.session_state:
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         login_form()
-        
+
         st.markdown("""
         <div style="text-align:center; margin-top:1.5rem;">
             <p style="color: #94a3b8; font-size: 0.78rem; font-weight: 500;">
-                Demo: <b style="color:#64748b;">admin</b>/admin · 
-                <b style="color:#64748b;">ventas</b>/ventas · 
+                Demo: <b style="color:#64748b;">admin</b>/admin ·
+                <b style="color:#64748b;">ventas</b>/ventas ·
                 <b style="color:#64748b;">almacen</b>/almacen
             </p>
         </div>
@@ -229,13 +310,13 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     # User card
     user = st.session_state.get("user", {})
     user_name = user.get("name", "Usuario")
     user_role = user.get("role", "Usuario")
     user_initial = user_name[0].upper() if user_name else "U"
-    
+
     st.markdown(f"""
     <div style="
         margin: 14px 12px 8px;
@@ -258,7 +339,7 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     # Navigation
     page = st.radio("", [
         "🏠 Dashboard",
@@ -273,7 +354,7 @@ with st.sidebar:
         "🔌 Integraciones",
         "👥 RRHH",
     ], key="nav", label_visibility="collapsed")
-    
+
     # Footer sidebar
     st.markdown("<div style='flex:1;'></div>", unsafe_allow_html=True)
     st.markdown("""
@@ -320,13 +401,13 @@ def page_header(title: str, subtitle: str):
 if page == "🏠 Dashboard":
     page_header("Dashboard", "Visión general de tu empresa en tiempo real")
     kpi_cards()
-    
+
     col1, col2 = st.columns([1.2, 1])
     with col1:
         sales_chart()
     with col2:
         stock_alert_chart()
-    
+
     campaign_chart()
     cashflow_forecast()
 
