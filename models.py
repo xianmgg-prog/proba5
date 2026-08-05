@@ -77,6 +77,7 @@ class StockMovement(Base):
     created_by = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     product = relationship("Product", back_populates="movements")
+    warehouse = relationship("Warehouse")
 
 class Supplier(Base):
     __tablename__ = "suppliers"

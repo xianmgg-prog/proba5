@@ -1,7 +1,8 @@
 import streamlit as st
 from database import SessionLocal
 from models import Customer, Invoice, InvoiceStatus, InvoiceItem, Product, Stock, StockMovement, StockMovementType
-from utils.helpers import format_currency, status_badge
+from utils.helpers import format_currency
+from utils.theme import status_badge
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from datetime import date

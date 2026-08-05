@@ -1,10 +1,9 @@
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from database import SessionLocal
-from models import Product, Stock, Invoice, InvoiceStatus, PurchaseOrder, BankTransaction, Campaign, CostAlert
+from models import Product, Stock, Invoice, InvoiceStatus, BankTransaction, Campaign
 from utils.theme import kpi_card
 from utils.helpers import format_currency
 
@@ -23,13 +22,13 @@ def kpi_cards():
     total_stock, total_sales, pending, balance = get_kpi_data()
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        kpi_card("Stock Total", f"{int(total_stock):,} uds", "📦", color="#3b82f6")
+        kpi_card("Stock Total", f"{int(total_stock):,} uds")
     with col2:
-        kpi_card("Ventas Pagadas", format_currency(total_sales), "💰", color="#10b981")
+        kpi_card("Ventas Pagadas", format_currency(total_sales))
     with col3:
-        kpi_card("Facturas Pendientes", format_currency(pending), "⏳", color="#f59e0b")
+        kpi_card("Pendientes", format_currency(pending))
     with col4:
-        kpi_card("Balance Banco", format_currency(balance), "🏦", color="#8b5cf6")
+        kpi_card("Balance Banco", format_currency(balance))
 
 @st.cache_data(ttl=60)
 def get_sales_data():
@@ -47,10 +46,11 @@ def sales_chart():
     df = pd.DataFrame(data)
     df = df.groupby("Fecha").sum().reset_index()
 
-    fig = px.bar(df, x="Fecha", y="Importe", title="📈 Ventas por Fecha", 
-                 color_discrete_sequence=["#1e3a5f"], template="plotly_white")
-    fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    fig = px.bar(df, x="Fecha", y="Importe", title="Ventas por fecha",
+                 color_discrete_sequence=["#111827"], template="plotly_white")
+    fig.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      font=dict(family="Inter, sans-serif", size=12))
     st.plotly_chart(fig, use_container_width=True)
 
 @st.cache_data(ttl=60)
@@ -70,14 +70,15 @@ def stock_alert_chart():
     if data:
         import pandas as pd
         df = pd.DataFrame(data)
-        fig = px.bar(df, x="Producto", y=["Stock", "Mínimo"], barmode="group", 
-                     title="⚠️ Alertas de Stock Bajo", template="plotly_white",
-                     color_discrete_sequence=["#ef4444", "#cbd5e1"])
-        fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
-                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig = px.bar(df, x="Producto", y=["Stock", "Mínimo"], barmode="group",
+                     title="Alertas de stock bajo", template="plotly_white",
+                     color_discrete_sequence=["#ef4444", "#d1d5db"])
+        fig.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(family="Inter, sans-serif", size=12))
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.success("✅ No hay alertas de stock")
+        st.success("No hay alertas de stock")
 
 @st.cache_data(ttl=60)
 def get_campaign_data():
@@ -93,20 +94,22 @@ def campaign_chart():
 
     col1, col2 = st.columns(2)
     with col1:
-        fig = px.pie(df, names="Campaña", values="Gastado", title="💸 Distribución Gasto Publicidad",
-                     template="plotly_white", hole=0.4)
-        fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
-                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig = px.pie(df, names="Campaña", values="Gastado", title="Gasto por plataforma",
+                     template="plotly_white", hole=0.55)
+        fig.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(family="Inter, sans-serif", size=12))
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        fig = px.bar(df, x="Campaña", y="ROAS", title="🎯 ROAS por Campaña", 
-                     color="ROAS", color_continuous_scale="RdYlGn", template="plotly_white")
-        fig.update_layout(height=320, margin=dict(l=20, r=20, t=40, b=20),
-                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig = px.bar(df, x="Campaña", y="ROAS", title="ROAS por campaña",
+                     color="ROAS", color_continuous_scale="Greys", template="plotly_white")
+        fig.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(family="Inter, sans-serif", size=12))
         st.plotly_chart(fig, use_container_width=True)
 
 def cashflow_forecast():
-    st.markdown("<h3 style='color:#1e3a5f;font-size:1.1rem;font-weight:700;margin:1.5rem 0 1rem 0;'>📊 Previsión de Tesorería (30 días)</h3>", unsafe_allow_html=True)
+    st.markdown("<h2 style='font-size:1.125rem;font-weight:600;color:#374151;margin:1.5rem 0 0.75rem 0;'>Previsión de tesorería (30 días)</h2>", unsafe_allow_html=True)
     import pandas as pd
     from datetime import datetime, timedelta
 
@@ -116,8 +119,9 @@ def cashflow_forecast():
 
     df = pd.DataFrame({"Fecha": dates, "Saldo Previsto": values})
     fig = px.line(df, x="Fecha", y="Saldo Previsto", title="", template="plotly_white")
-    fig.add_hline(y=20000, line_dash="dash", line_color="#ef4444", annotation_text="Límite mínimo")
-    fig.update_traces(line_color="#1e3a5f", line_width=3)
-    fig.update_layout(height=280, margin=dict(l=20, r=20, t=20, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    fig.add_hline(y=20000, line_dash="dash", line_color="#ef4444", annotation_text="Mínimo")
+    fig.update_traces(line_color="#111827", line_width=2)
+    fig.update_layout(height=260, margin=dict(l=20, r=20, t=20, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                      font=dict(family="Inter, sans-serif", size=12))
     st.plotly_chart(fig, use_container_width=True)

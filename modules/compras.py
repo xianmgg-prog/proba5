@@ -1,7 +1,8 @@
 import streamlit as st
 from database import SessionLocal
 from models import Supplier, PurchaseOrder, PurchaseOrderStatus, PurchaseOrderItem, Product
-from utils.helpers import format_currency, status_badge
+from utils.helpers import format_currency
+from utils.theme import status_badge
 from sqlalchemy.orm import joinedload
 import pandas as pd
 

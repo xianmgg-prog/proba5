@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="ERP Nexus — Gestión Empresarial", page_icon="🏢", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="ERP Nexus", page_icon="🏢", layout="wide", initial_sidebar_state="expanded")
 
 from database import init_db
 from seed_data import seed
@@ -17,36 +17,39 @@ def setup_database():
 
 setup_database()
 
-# Login screen profesional
+# Login screen sobrio
 if "user" not in st.session_state:
-    st.markdown("""
-    <div style="max-width:420px;margin:8vh auto 0 auto;text-align:center;">
-        <div style="width:64px;height:64px;background:linear-gradient(135deg,#1e3a5f,#2d5a8f);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem auto;font-size:2rem;">🏢</div>
-        <h1 style="font-size:1.75rem;font-weight:700;color:#1e3a5f;margin-bottom:0.5rem;">ERP Nexus</h1>
-        <p style="color:#64748b;font-size:0.95rem;margin-bottom:2rem;">Sistema integral de gestión empresarial</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1,2,1])
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
+        st.markdown("<div style='height:15vh'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center;margin-bottom:2rem;">
+            <div style="width:48px;height:48px;background:#111827;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;font-weight:700;margin-bottom:1rem;">N</div>
+            <h1 style="font-size:1.5rem;font-weight:700;color:#111827;margin:0;letter-spacing:-0.025em;">ERP Nexus</h1>
+            <p style="color:#6b7280;font-size:0.875rem;margin:0.25rem 0 0 0;">Sistema de gestión empresarial</p>
+        </div>
+        """, unsafe_allow_html=True)
         login_form()
-
-    st.markdown("""
-    <div style="max-width:420px;margin:2rem auto 0 auto;text-align:center;">
-        <p style="color:#94a3b8;font-size:0.8rem;">Demo: <b>admin</b> / <b>admin</b> · <b>ventas</b> / <b>ventas</b> · <b>almacen</b> / <b>almacen</b></p>
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center;margin-top:1.5rem;">
+            <p style="color:#9ca3af;font-size:0.75rem;">Demo: admin/admin · ventas/ventas · almacen/almacen</p>
+        </div>
+        """, unsafe_allow_html=True)
     st.stop()
 
 require_login()
 
-# Sidebar profesional
+# Sidebar sobrio
 with st.sidebar:
     st.markdown("""
-    <div style="text-align:center;padding:1rem 0 1.5rem 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:1rem;">
-        <div style="width:48px;height:48px;background:rgba(255,255,255,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem auto;font-size:1.5rem;">🏢</div>
-        <div style="color:white;font-weight:700;font-size:1.1rem;">ERP Nexus</div>
-        <div style="color:rgba(255,255,255,0.5);font-size:0.75rem;">v1.0 · Demo</div>
+    <div style="padding:0.5rem 0 1.25rem 0;border-bottom:1px solid #1f2937;margin-bottom:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+            <div style="width:32px;height:32px;background:#1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#f3f4f6;font-size:0.875rem;font-weight:700;">N</div>
+            <div>
+                <div style="color:#f3f4f6;font-weight:600;font-size:0.9375rem;letter-spacing:-0.01em;">ERP Nexus</div>
+                <div style="color:#6b7280;font-size:0.6875rem;">v1.0</div>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -66,20 +69,18 @@ with st.sidebar:
         "👥 RRHH",
     ], key="nav", label_visibility="collapsed")
 
-    st.markdown("<div style='margin-top:2rem;border-top:1px solid rgba(255,255,255,0.1);padding-top:1rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:auto;padding-top:1rem;border-top:1px solid #1f2937;'></div>", unsafe_allow_html=True)
     logout()
 
 # Main content
 if page == "🏠 Dashboard":
-    section_header("Dashboard Principal", "Visión general de tu empresa en tiempo real")
+    section_header("Dashboard", "Visión general de tu empresa")
     kpi_cards()
-
     col1, col2 = st.columns(2)
     with col1:
         sales_chart()
     with col2:
         stock_alert_chart()
-
     campaign_chart()
     cashflow_forecast()
 

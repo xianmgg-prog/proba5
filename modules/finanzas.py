@@ -2,6 +2,7 @@ import streamlit as st
 from database import SessionLocal
 from models import Account, JournalEntry, BankTransaction, Invoice, InvoiceStatus
 from utils.helpers import format_currency
+from utils.theme import section_header
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 import pandas as pd
@@ -29,15 +30,15 @@ def get_bank_transactions():
     return result
 
 def show():
-    st.header("💼 Finanzas y Contabilidad")
+    section_header("Finanzas y contabilidad", "Libro diario, banco y balance")
     db = SessionLocal()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Cuentas", "Libro Diario", "Banco / Sandbox", "Balance"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Cuentas", "Libro diario", "Banco", "Balance"])
 
     with tab1:
         accounts = get_accounts()
         data = [{"Código": a.code, "Nombre": a.name, "Tipo": a.type.value, "Saldo": format_currency(a.balance)} for a in accounts]
-        st.dataframe(pd.DataFrame(data), use_container_width=True)
+        st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
 
     with tab2:
         entries = get_journal_entries()
@@ -50,12 +51,10 @@ def show():
                 "Debe": format_currency(e.amount) if e.debit_account_id else "",
                 "Haber": format_currency(e.amount) if e.credit_account_id else "",
             })
-        st.dataframe(pd.DataFrame(data), use_container_width=True)
+        st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
 
     with tab3:
-        st.info("🏦 **Modo Sandbox** — Conectado a datos simulados de BBVA Sandbox")
-        st.markdown("Para conectar con banco real, configura las credenciales en `.env` (ver docs/sandbox_banking.md)")
-
+        st.info("Modo sandbox — datos simulados de BBVA")
         txs = get_bank_transactions()
         data = []
         for t in txs:
@@ -64,13 +63,12 @@ def show():
                 "Concepto": t.description,
                 "Importe": format_currency(t.amount),
                 "Saldo": format_currency(t.balance),
-                "Conciliado": "✅" if t.is_reconciled else "❌",
-                "Factura": t.invoice_id or "-",
-                "Origen": t.source
+                "Conciliado": "Sí" if t.is_reconciled else "No",
+                "Factura": t.invoice_id or "—",
             })
-        st.dataframe(pd.DataFrame(data), use_container_width=True)
+        st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
 
-        if st.button("🔄 Simular conciliación automática"):
+        if st.button("Conciliar automáticamente"):
             pending_invs = db.query(Invoice).filter(Invoice.status == InvoiceStatus.sent).all()
             for inv in pending_invs:
                 tx = db.query(BankTransaction).filter(
@@ -83,12 +81,11 @@ def show():
                     inv.status = InvoiceStatus.paid
                     inv.paid_date = date.today()
             db.commit()
-            st.success("Conciliación simulada completada")
+            st.success("Conciliación completada")
             st.cache_data.clear()
             st.rerun()
 
     with tab4:
-        st.subheader("Balance Simplificado")
         assets = db.query(func.sum(Account.balance)).filter(Account.type == "activo").scalar() or 0
         liabilities = db.query(func.sum(Account.balance)).filter(Account.type == "pasivo").scalar() or 0
         equity = db.query(func.sum(Account.balance)).filter(Account.type == "patrimonio").scalar() or 0
@@ -97,13 +94,13 @@ def show():
 
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("ACTIVO", format_currency(assets))
-            st.metric("PASIVO", format_currency(liabilities))
-            st.metric("PATRIMONIO", format_currency(equity))
+            st.metric("Activo", format_currency(assets))
+            st.metric("Pasivo", format_currency(liabilities))
+            st.metric("Patrimonio", format_currency(equity))
         with col2:
-            st.metric("INGRESOS", format_currency(income))
-            st.metric("GASTOS", format_currency(expense))
+            st.metric("Ingresos", format_currency(income))
+            st.metric("Gastos", format_currency(expense))
             result = float(income) - float(expense)
-            st.metric("RESULTADO", format_currency(result), delta=f"{'Beneficio' if result > 0 else 'Pérdida'}")
+            st.metric("Resultado", format_currency(result), delta="Beneficio" if result > 0 else "Pérdida")
 
     db.close()
