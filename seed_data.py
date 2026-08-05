@@ -13,6 +13,12 @@ def seed():
     init_db()
     db = SessionLocal()
 
+    # Verificar si ya hay datos (seed idempotente)
+    if db.query(User).count() > 0:
+        print("✅ Base de datos ya tiene datos. Saltando seed.")
+        db.close()
+        return
+
     # Usuarios
     users = [
         User(username="admin", email="admin@empresa.com", full_name="Administrador", role=UserRole.admin, password_hash="admin"),

@@ -6,11 +6,9 @@ from seed_data import seed
 from utils.auth import login_form, logout, show_user_info, require_login
 from utils.dashboard import kpi_cards, sales_chart, stock_alert_chart, campaign_chart, cashflow_forecast
 
-# Inicializar DB
+# Inicializar DB y seed (idempotente)
 init_db()
-if "db_seeded" not in st.session_state:
-    seed()
-    st.session_state.db_seeded = True
+seed()
 
 # Navegación
 if "user" not in st.session_state:
@@ -51,7 +49,7 @@ if page == "🏠 Dashboard":
     cashflow_forecast()
 
     st.divider()
-    st.caption("ERP MVP v0.1 | Datos de demostración | Listo para GitHub + Streamlit Cloud")
+    st.caption("ERP MVP v0.1 | Datos de demostración | Listo para GitHub + Render")
 
 elif page == "📦 Inventario":
     from modules import inventario
